@@ -8,5 +8,6 @@
 ```
 pip install .
 python NETRDExplorer.py
-
 ```
+
+### the site will be on your local host http://127.0.0.1:5000/
