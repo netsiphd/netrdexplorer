@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js'></script>
+<script src='/static/d3-adjacency-matrix-layout.js' type='text/JavaScript'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.10.3/babel.min.js'></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</head>
+<style>
+  svg {
+    border: 0px solid gray;
+  }
+
+  g.am-axis text {
+    font-size: 8px;
+  }
+
+  .domain {
+    fill: none;
+  }
+
+  .tick>line {
+    stroke: black;
+    stroke-width: 1px;
+    stroke-opacity: 0.25;
+  }
+
+  .adj {
+    height: 100%;
+    width: 100%;
+  }
+
+  #generate-network {
+    height: 100%;
+    width: 50%;
+  }
+
+  .banner {
+    height: 5%;
+    width: 100%;
+    background-color: black;
+
+    vertical-align: middle;
+    color: whitesmoke;
+
+  }
+
+  .divider1 {
+    width: 100%;
+    border-bottom: 2px solid #343A40;
+    text-align: center;
+  }
+
+  .center {
+    display: block;
+    margin: 0 auto;
+  }
+
+  #loader{
+    display: block;
+    margin: 0 auto;
+  }
+
+  .slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #343A40;
+    cursor: pointer;
+  }
+
+  .slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #343A40;
+    cursor: pointer;
+  }
+
+
+  div.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 100px;
+    height: auto;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: grey;
+    color: white;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+
+
+.section{
+    height: 47%; 
+    background-color: #FFFFFF;
+}
+
+html { height: 100% }
+body { height: 100%; margin: 0; padding: 0 }
+
+</style>
+
+<header>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="#">
+      <img src="/static/netsciphd.png" width="auto" height="30" class="d-inline-block align-top" alt="">
+      NETRD Explorer
+    </a>
+    
+    
+      <ul class="navbar-nav" >
+        <li class="nav-item">
+          <a class="nav-link pull-right" href="https://github.com/netsiphd/netrd">Github</a>
+        </li>
+        
+      
+     
+        <li class="nav-item">
+          <a class="nav-link" href="https://netrd.readthedocs.io/en/latest/">Documentation</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/netsiphd/netrdexplorer">Code</a>
+        </li>
+        
+     
+      
+        <li class="nav-item">
+          <a class="nav-link" data-toggle='modal' data-target="#aboutModal">About</a>
+        </li>
+
+        
+        
+      </ul>
+
+      <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLabel">About NETRD and NETRD Explorer</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              Welcome to the netrd Explorer! netrd is a package that is designed primarily to do two things: 
+              <br><br>
+              1) reconstruct networks from time series data
+              <br><br>
+              2) measure the graph distance between two networks. 
+              <br><br>
+              Here, we demo a few of the techniques included in the netrd library.Play around with some network structures, 
+              simulate some dynamics on them, then watch as networks get reconstructed from just the time series data. 
+              Comapre the networks in Step 4 using a number of graph distance methods.
+              <br><br>
+              Stay tuned as this tool grows! In the future we plan to allow for users to upload their own network and timeseries data!
+            </div>
+          </div>
+        </div>
+      </div>
+    
+  </nav>
+</header>
+
+<body  style="background-color:#FFFFFF;">
+ <div class="section">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-6">
+        <h1 class="divider1">1. Generate Network</h1>
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="networkGeneratorSelect">Network Generation Method</label>
+              <select id="networkGeneratorSelect" class="form-control">
+                <option value="Ring of Cliques">Ring of Cliques</option>
+                <option value="Barabasi Albert Graph">Barabasi Albert Graph</option>
+                <option value="Erdos Renyi Graph">Erdos Renyi Graph</option>
+                <option value="Random Geometric Graph">Random Geometric Graph</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col">
+              <div class="slidecontainer">
+                <label id="netGenSlider1Label" for="networkGeneratorSelect">Number of Cliques:</label>
+                <span id="netGenSlider1Value">4</span>
+                <input type="range" min="2" max="6" value="4" class="slider" id="netGenSlider1">
+              </div>
+              <div class="slidecontainer">
+                <label id="netGenSlider2Label" for="networkGeneratorSelect">Size of Cliques:</label>
+                <span id="netGenSlider2Value">16</span>
+                <input type="range" min="8" max="24" value="16" class="slider" id="netGenSlider2">
+              </div>
+            </div>
+
+        </div>
+        </div>
+          <div id="ground-network"></div>
+      </div>
+      <div class="col-6">
+        <h1 class="divider1">2. Generate Time Series</h1>
+        <div class="row" style='margin-bottom: 50px'>
+          <div class="col">
+            <div class="form-group">
+              <label for="timeseriesGeneratorSelect">Time Series Generation Method</label>
+              <select id="timeseriesGeneratorSelect" class="form-control">
+                <option value="Sherrington Kirkpatrick Ising">Sherrington Kirkpatrick Ising</option>
+                <option value="Branching Model">Branching Model</option>
+                <option value="Voter Model">Voter Model</option>
+                <!--<option value="Single Unbiased Random Walker">Single Unbiased Random Walker</option>-->
+                <option value="Ising Glauber">Ising Glauber</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col">
+              <div class="slidecontainer">
+                <label for="networkGeneratorSelect">Length of Time Series:</label>
+                <span id="timeseriesValue">2000</span>
+                <input type="range" min="100" max="10000" value="2000" class="slider" id="timeseriesSlider">
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div id="timeseries"></div>
+
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="section">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col">
+        <h1 class="divider1">3. Reconstruct Network</h1>
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <label for="timeseriesGeneratorSelect">Network Reconstruction Method 1</label>
+              <select id="recon1Select" class="form-control">
+                <option value="Random">Random</option>
+                <option value="Correlation Matrix">Correlation Matrix</option>
+                <option value="Partial Correlation Matrix">Partial Correlation Matrix</option>
+                <!--<option value="Free Energy Minimization">Free Energy Minimization</option>-->
+                <option value="Naive Mean Field">Naive Mean Field</option>
+                <option value="Thouless Anderson Palmer">Thouless Anderson Palmer</option>
+                <option value="Exact Mean Field">Exact Mean Field</option>
+                <option value="Maxium Likelihood Estimation">Maximum Likelihood Estimation</option>
+                <option value="Covergent Cross Mapping">Covergent Cross Mapping</option>
+                <option value="Mutual Information Matrix">Mutual Information Matrix</option>
+                <option value="OU Inference">OU Inference</option>
+                <option value="Graphical Lasso">Graphical Lasso</option>
+                <option value="Marchenko Pastur" selected>Marchenko Pastur</option>
+                <option value="Time Granger Causality">Time Granger Causality</option>
+
+              </select>
+            </div>
+            <div id="recon1"></div>
+          </div>
+          <div class="col">
+            <div class="form-group" >
+              <label for="timeseriesGeneratorSelect">Network Reconstruction Method 2</label>
+              <select id="recon2Select" class="form-control">
+                <option value="Random">Random</option>
+                <option value="Correlation Matrix" selected>Correlation Matrix</option>
+                <option value="Partial Correlation Matrix">Partial Correlation Matrix</option>
+                <!--<option value="Free Energy Minimization">Free Energy Minimization</option>-->
+                <option value="Naive Mean Field">Naive Mean Field</option>
+                <option value="Thouless Anderson Palmer">Thouless Anderson Palmer</option>
+                <option value="Exact Mean Field">Exact Mean Field</option>
+                <option value="Maxium Likelihood Estimation">Maximum Likelihood Estimation</option>
+                <!--<option value="Covergent Cross Mapping">Covergent Cross Mapping</option>-->
+                <option value="Mutual Information Matrix" >Mutual Information Matrix</option>
+                <option value="OU Inference">OU Inference</option>
+                <option value="Graphical Lasso">Graphical Lasso</option>
+                <option value="Marchenko Pastur">Marchenko Pastur</option>
+                <option value="Time Granger Causality">Time Granger Causality</option>
+
+              </select>
+            </div>
+            <div id="recon2"></div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <label for="timeseriesGeneratorSelect">Network Reconstruction Method 3</label>
+              <select id="recon3Select" class="form-control">
+                <option value="Random">Random</option>
+                <option value="Correlation Matrix">Correlation Matrix</option>
+                <option value="Partial Correlation Matrix">Partial Correlation Matrix</option>
+                <!--<option value="Free Energy Minimization">Free Energy Minimization</option>-->
+                <option value="Naive Mean Field">Naive Mean Field</option>
+                <option value="Thouless Anderson Palmer">Thouless Anderson Palmer</option>
+                <option value="Exact Mean Field">Exact Mean Field</option>
+                <option value="Maxium Likelihood Estimation">Maximum Likelihood Estimation</option>
+                <!--<option value="Covergent Cross Mapping">Covergent Cross Mapping</option>-->
+                <option value="Mutual Information Matrix" selected>Mutual Information Matrix</option>
+                <option value="OU Inference">OU Inference</option>
+                <option value="Graphical Lasso">Graphical Lasso</option>
+                <option value="Marchenko Pastur">Marchenko Pastur</option>
+                <option value="Time Granger Causality">Time Granger Causality</option>
+
+              </select>
+            </div>
+            <div id="recon3"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <h1 class="divider1">4. Network Distances</h1>
+        <div class="form-group">
+          <label for="timeseriesGeneratorSelect">Graph Distance Method</label>
+          <select id="distanceSelect" class="form-control">
+            <option value="Jaccard">Jaccard</option>
+            <option value="Hamming">Hamming</option>
+            <option value="Frobenius">Frobenius</option>
+            <option value="Portrait Divergence">Portrait Divergence</option>
+            <option value="Ipsen Mikhailov">Ipsen Mikhailov</option>
+            <option value="Hamming Ipsen Mikhailov">Hamming Ipsen Mikhailov</option>
+            <option value="Resistance Perturbation">Resistance Perturbation</option>
+            <option value="Net Simile">Net Simile</option>
+            <option value="Polynomial Dissimilarity">Polynomial Dissimilarity</option>
+            <option value="Onion Divergence">Onion Divergence</option>
+            <option value="Quantum Spectral JSD">Quantum Spectral JSD</option>
+            <option value="Degree Divergence">Degree Divergence</option>
+            <option value="Net LSD">Net LSD</option>
+            <option value="Communicability Sequence">Communicability Sequence</option>
+            <option value="Non Backtracking Distance">Non Backtracking Distance</option>
+            <option value="Delta Con">Delta Con</option>
+          </select>
+        </div>
+        <div id="heatmap"></div>
+        <div id="colorbar"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+</body>
+
+
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="loader" height=150 width=150 x="0px" y="0px" viewBox="0 0 100 100" style="transform-origin: 50px 50px 0px; display: none" xml:space="preserve"><g style="transform-origin: 50px 50px 0px;"><g style="transform-origin: 50px 50px 0px; transform: scale(0.6);"><g style="transform-origin: 50px 50px 0px;"><g><style type="text/css" class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -1s; animation-direction: normal;">.st0{fill:none;stroke:#333;stroke-width:3.5;stroke-miterlimit:10}.st1{fill:#666}.st1,.st2,.st3,.st4{stroke:#333;stroke-width:3.5;stroke-miterlimit:10}.st2{stroke-linecap:round;fill:#666}.st3,.st4{fill:#e15b64}.st4{fill:#666;stroke-linecap:round;stroke-linejoin:round}.st5{fill:#f47e60}.st6{opacity:.2}.st7{fill:none;stroke:#fff;stroke-width:3.5;stroke-linecap:round;stroke-miterlimit:10}.st8{fill:#e0e0e0;stroke:#333}.st10,.st11,.st8,.st9{stroke-width:3.5;stroke-miterlimit:10}.st9{opacity:.2;stroke:#000}.st10,.st11{fill:#a0c8d7;stroke:#333}.st11{fill:#333}.st12{fill:#e0e0e0}.st13{fill:#f8b26a}.st14,.st15{fill:#a0c8d7;stroke:#fff;stroke-width:3.5;stroke-linecap:round;stroke-miterlimit:10}.st15{fill:#f5e6c8;stroke:#333}.st16{fill:#fff}.st16,.st17,.st18{stroke:#333;stroke-width:3.5;stroke-miterlimit:10}.st17{stroke-dasharray:3,3;fill:none}.st18{fill:#f5e6c8}.st19,.st20{fill:none;stroke-linecap:round}.st19{stroke:#333;stroke-width:3.5;stroke-miterlimit:10}.st20{stroke-dasharray:3.837,5.7554}.st20,.st21,.st22{stroke:#333;stroke-width:3.5;stroke-miterlimit:10}.st21{stroke-linecap:round;stroke-dasharray:4,6;fill:none}.st22{fill:#f5e169}.st23{fill:#333}.st24{fill:#fff}.st25,.st26,.st27{fill:none;stroke:#333;stroke-miterlimit:10}.st25{stroke-dasharray:3.733,3.733;stroke-width:3.5}.st26,.st27{stroke-width:7}.st27{fill:#f8b26a;stroke-width:3.5}.st28,.st29{fill:#f5e6c8}.st29{stroke:#fff;stroke-linecap:round}.st29,.st30,.st31,.st32,.st33{stroke-width:3.5;stroke-miterlimit:10}.st30{opacity:.2;stroke-linecap:round;stroke:#000}.st31,.st32,.st33{fill:#abbd81;stroke:#333}.st32,.st33{fill:none;stroke:#e0e0e0;stroke-width:7}.st33{fill:#849b87;stroke:#333;stroke-width:3.5}.st34{fill:#abbd81}.st35,.st36,.st37{opacity:.2;stroke:#000;stroke-width:3.5;stroke-miterlimit:10}.st35{stroke-linecap:round;stroke-linejoin:round}.st36,.st37{fill:#abbd81}.st37{fill:#f8b26a}.st38{fill:url(#SVGID_1_);stroke:#333}.st38,.st39,.st40,.st41{stroke-width:3.5;stroke-miterlimit:10}.st39{opacity:.2;stroke-linejoin:round;stroke:#000}.st40,.st41{fill:#77a4bd;stroke:#333}.st41{fill:none;stroke-linecap:round;stroke-dasharray:3.5707,5.356}.st42{fill:#f2f2f2}.st43,.st44,.st45{stroke-width:3.5;stroke-miterlimit:10}.st43{stroke:#333;fill:url(#SVGID_2_)}.st44,.st45{fill:none;stroke-linecap:round}.st44{stroke-linejoin:round;stroke:#333}.st45{stroke:#e0e0e0}.st46{fill:url(#SVGID_3_);stroke:#333}.st46,.st47,.st48,.st49{stroke-width:3.5;stroke-miterlimit:10}.st47{stroke-linecap:round;stroke-linejoin:round;fill:none;stroke:#fff}.st48,.st49{fill:url(#SVGID_4_);stroke:#333}.st49{fill:url(#SVGID_5_)}.st50,.st51{fill:none;stroke-width:3.5}.st50{stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;stroke:#f8b26a}.st51{stroke:#e0e0e0}.st51,.st52,.st53,.st54{stroke-miterlimit:10}.st52{stroke-width:12;fill:none;stroke:#e15b64}.st53,.st54{fill:#333;stroke:#333}.st54{fill:none;stroke-width:3;stroke-linecap:round}.st55{opacity:.5}.st56{fill:none;stroke:#000;stroke-linecap:round;stroke-miterlimit:10}.st57{fill:#e15b64}.st58,.st59{stroke-miterlimit:10}.st58{stroke-linecap:round;fill:none;stroke:#fff;stroke-width:3}.st59{fill:#f47e60;stroke:#333;stroke-width:3.5}.st60,.st61{stroke-linecap:round}.st60{stroke:#333;stroke-width:3.5;stroke-miterlimit:10;fill:#fff}.st61{fill:#333}.st61,.st62,.st63,.st64,.st65,.st66,.st67,.st68{stroke:#333;stroke-width:3.5;stroke-miterlimit:10}.st63,.st64,.st65,.st66,.st67,.st68{fill:#f5e169;stroke-linecap:round}.st64,.st65,.st66,.st67,.st68{fill:none;stroke:#f8b26a}.st65,.st66,.st67,.st68{fill:#abbd81;stroke:#333}.st66,.st67,.st68{fill:#a0c8d7}.st67,.st68{fill:#f47e60}.st68{fill:#c33737}</style><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.952381s; animation-direction: normal;"><line class="st0" x1="50" y1="50" x2="25.875" y2="77.188" stroke="#DA4145" style="stroke: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.904762s; animation-direction: normal;"><line class="st0" x1="22.25" y1="26.25" x2="50" y2="50" stroke="#DA4145" style="stroke: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.857143s; animation-direction: normal;"><line class="st0" x1="62.25" y1="19.687" x2="50" y2="50" stroke="#DA4145" style="stroke: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.809524s; animation-direction: normal;"><line class="st0" x1="82.625" y1="52.188" x2="50" y2="50" stroke="#DA4145" style="stroke: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.761905s; animation-direction: normal;"><line class="st0" x1="69.922" y1="80.578" x2="50" y2="50" stroke="#DA4145" style="stroke: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.714286s; animation-direction: normal;"><circle class="st16" cx="22.25" cy="26.25" r="7" stroke="#DA4145" fill="#DA4145" style="stroke: rgb(218, 65, 69); fill: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.666667s; animation-direction: normal;"><circle class="st16" cx="82.625" cy="52.188" r="7.375" stroke="#DA4145" fill="#DA4145" style="stroke: rgb(218, 65, 69); fill: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.619048s; animation-direction: normal;"><circle class="st16" cx="62.25" cy="19.687" r="9.125" stroke="#DA4145" fill="#DA4145" style="stroke: rgb(218, 65, 69); fill: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.571429s; animation-direction: normal;"><circle class="st16" cx="50" cy="50" r="5.188" stroke="#DA4145" fill="#DA4145" style="stroke: rgb(218, 65, 69); fill: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.52381s; animation-direction: normal;"><circle class="st16" cx="25.875" cy="77.188" r="7.375" stroke="#DA4145" fill="#DA4145" style="stroke: rgb(218, 65, 69); fill: rgb(218, 65, 69);"/></g><g class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.47619s; animation-direction: normal;"><circle class="st16" cx="69.922" cy="80.578" r="9.422" stroke="#DA4145" fill="#DA4145" style="stroke: rgb(218, 65, 69); fill: rgb(218, 65, 69);"/></g><metadata xmlns:d="https://loading.io/stock/" class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.428571s; animation-direction: normal;">
+<d:name class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.380952s; animation-direction: normal;"></d:name>
+<d:tags class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.333333s; animation-direction: normal;"></d:tags>
+<d:license class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.285714s; animation-direction: normal;"></d:license>
+<d:slug class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.238095s; animation-direction: normal;"></d:slug>
+</metadata></g></g></g></g><style type="text/css" class="ld ld-breath" style="transform-origin: 50px 50px 0px; animation-duration: 1s; animation-delay: -0.190476s; animation-direction: normal;">@keyframes ld-breath {
+  0% {
+    -webkit-transform: scale(0.86);
+    transform: scale(0.86);
+  }
+  50% {
+    -webkit-transform: scale(1.06);
+    transform: scale(1.06);
+  }
+  100% {
+    -webkit-transform: scale(0.86);
+    transform: scale(0.86);
+  }
+}
+@-webkit-keyframes ld-breath {
+  0% {
+    -webkit-transform: scale(0.86);
+    transform: scale(0.86);
+  }
+  50% {
+    -webkit-transform: scale(1.06);
+    transform: scale(1.06);
+  }
+  100% {
+    -webkit-transform: scale(0.86);
+    transform: scale(0.86);
+  }
+}
+.ld.ld-breath {
+  -webkit-animation: ld-breath 1s infinite;
+  animation: ld-breath 1s infinite;
+}
+</style></svg>
+
+<script>
+
+var loader = document.getElementById('loader');
+
+  var data = {
+    network: "none",
+    avgDegree: "none",
+    timeseries: "none",
+    recon1: "none",
+    recon2: "none",
+    recon3: "none",
+    max: "none"
+  };
+
+  const networkURL = 'http://127.0.0.1:5000/network';
+  const timeseriesURL = 'http://127.0.0.1:5000/time';
+  const reconstructorURL = 'http://127.0.0.1:5000/recon';
+  const distanceURL = 'http://127.0.0.1:5000/distance';
+  const metricsURL = 'http://127.0.0.1:5000/metrics';
+  const scaleURL = 'http://127.0.0.1:5000/scale';
+
+  var netGenSlider1 = document.getElementById("netGenSlider1");
+var netGenSlider2 = document.getElementById("netGenSlider2");
+var timeseriesSlider = document.getElementById("timeseriesSlider");
+var recon1Select = document.getElementById("recon1Select");
+var recon2Select = document.getElementById("recon2Select");
+var recon3Select = document.getElementById("recon3Select");
+var distanceSelect =  document.getElementById("distanceSelect");
+var netGenSlider1Value = document.getElementById("netGenSlider1Value");
+var netGenSlider2Value = document.getElementById("netGenSlider2Value");
+var timeseriesValue = document.getElementById("timeseriesValue");
+var netGenSelect = document.getElementById("networkGeneratorSelect");
+var timeGenSelect = document.getElementById("timeseriesGeneratorSelect");
+
+
+
+
+groundNetwork(netGenSlider1.value, netGenSlider2.value);
+scale(distanceSelect.value)
+
+
+
+netGenSelect.onchange = function() {
+    if (this.value == "Barabasi Albert Graph"){
+        document.getElementById("netGenSlider1Label").innerHTML = 'Number of Nodes:';
+        document.getElementById("netGenSlider2Label").innerHTML = 'Number of Edges:';
+
+        document.getElementById("netGenSlider1Value").innerHTML = '64';
+        document.getElementById("netGenSlider2Value").innerHTML = '5';
+
+        document.getElementById("netGenSlider1").step = 1;
+        document.getElementById("netGenSlider2").step = 1;
+
+
+        document.getElementById("netGenSlider1").min = 24;
+        document.getElementById("netGenSlider1").max = 100;
+        document.getElementById("netGenSlider2").min = 1;
+        document.getElementById("netGenSlider2").max = 10;
+
+        document.getElementById("netGenSlider1").value = 64;
+        document.getElementById("netGenSlider1").defaultValue = 64;
+        document.getElementById("netGenSlider2").value = 5;
+        document.getElementById("netGenSlider2").defaultValue = 5;
+
+
+
+    }
+    else if (this.value == "Ring of Cliques"){
+        document.getElementById("netGenSlider1Label").innerHTML = 'Number of Cliques:';
+        document.getElementById("netGenSlider2Label").innerHTML = 'Size of Cliques:';
+
+        document.getElementById("netGenSlider1Value").innerHTML = '64';
+        document.getElementById("netGenSlider2Value").innerHTML = '5';
+
+        document.getElementById("netGenSlider1").step = 1;
+        document.getElementById("netGenSlider2").step = 1;
+
+        document.getElementById("netGenSlider1").min = 2;
+        document.getElementById("netGenSlider1").max = 6;
+        document.getElementById("netGenSlider2").min = 8;
+        document.getElementById("netGenSlider2").max = 24;
+
+        document.getElementById("netGenSlider1").value = 4;
+        document.getElementById("netGenSlider1").defaultValue = 4;
+        document.getElementById("netGenSlider2").value = 16;
+        document.getElementById("netGenSlider2").defaultValue = 16;
+    }
+    else  if (this.value == "Erdos Renyi Graph"){
+        document.getElementById("netGenSlider1Label").innerHTML = 'Number of Nodes:';
+        document.getElementById("netGenSlider2Label").innerHTML = 'Probability of Edges:';
+
+         document.getElementById("netGenSlider1").step = 1;
+        document.getElementById("netGenSlider2").step = 0.1;
+
+
+        document.getElementById("netGenSlider1Value").innerHTML = '64';
+        document.getElementById("netGenSlider2Value").innerHTML = '0.5';
+
+        document.getElementById("netGenSlider1").min = 30;
+        document.getElementById("netGenSlider1").max = 100;
+        document.getElementById("netGenSlider2").min = 0.3;
+        document.getElementById("netGenSlider2").max = 1;
+
+        document.getElementById("netGenSlider1").value = 64;
+        document.getElementById("netGenSlider1").defaultValue = 64;
+        document.getElementById("netGenSlider2").value = 0.5;
+        document.getElementById("netGenSlider2").defaultValue = 0.5;
+    }
+    else  if (this.value == "Random Geometric Graph"){
+        document.getElementById("netGenSlider1Label").innerHTML = 'Number of Nodes:';
+        document.getElementById("netGenSlider2Label").innerHTML = 'Distance of Edges:';
+
+        document.getElementById("netGenSlider1").step = 1;
+        document.getElementById("netGenSlider2").step = 0.1;
+
+
+        document.getElementById("netGenSlider1Value").innerHTML = '64';
+        document.getElementById("netGenSlider2Value").innerHTML = '0.5';
+
+        document.getElementById("netGenSlider1").min = 30;
+        document.getElementById("netGenSlider1").max = 100;
+        document.getElementById("netGenSlider2").min = 0.3;
+        document.getElementById("netGenSlider2").max = 1;
+
+        document.getElementById("netGenSlider1").value = 64;
+        document.getElementById("netGenSlider1").defaultValue = 64;
+        document.getElementById("netGenSlider2").value = 0.5;
+        document.getElementById("netGenSlider2").defaultValue = 0.5;
+    }
+
+
+
+    groundNetwork(document.getElementById("netGenSlider1").value,document.getElementById("netGenSlider2").value);
+}
+
+netGenSlider1.onchange = function() {
+    groundNetwork(this.value, netGenSlider2.value);
+}
+
+netGenSlider2.onchange = function(){
+    groundNetwork(netGenSlider1.value, this.value);
+}
+
+netGenSlider1.oninput = function() {
+    netGenSlider1Value.innerHTML = netGenSlider1.value
+}
+
+netGenSlider2.oninput = function() {
+    netGenSlider2Value.innerHTML = netGenSlider2.value
+}
+
+timeGenSelect.onchange = function() {
+    timeseries(timeseriesSlider.value);
+}
+
+timeseriesSlider.oninput = function(){
+    timeseriesValue.innerHTML = timeseriesSlider.value
+}
+
+timeseriesSlider.onchange = function(){
+    timeseries(this.value);
+}
+
+recon1Select.oninput = function(){
+    recon1(this.value, data.timeseries);
+}
+
+recon2Select.oninput = function(){
+    recon2(this.value, data.timeseries);
+}
+
+recon3Select.oninput = function(){
+    recon3(this.value, data.timeseries);
+}
+
+distanceSelect.oninput = function(){
+    scale(this.value)
+    //distance(this.value);
+}
+
+
+
+function groundNetwork(cliq, size){
+
+     loading('#ground-network');
+
+
+
+     $.ajax({
+      url:networkURL + '?cliq=' + cliq + '&size=' + size + '&gen=' + netGenSelect.value,
+      type:"PUT",
+      success: function(results, status){
+            //console.log(results);
+            data.network = results;
+            createAdjacencyMatrix(data.network, '#ground-network');
+            metrics()
+            timeseries(2001);
+        }
+    });
+
+}
+
+function metrics(){
+    $.ajax({
+          url:metricsURL,
+          type:"PUT",
+          dataType: 'json',
+          contentType: 'application/json',
+          data: JSON.stringify(data.network),
+          success: function(results, status){
+                console.log('avg degree',results);
+                data.avgDegree = results;
+            }
+        });
+}
+
+function timeseries(length){
+
+    loading('#timeseries');
+
+    $.ajax({
+      url:timeseriesURL + "?len=" + length + '&gen=' + timeGenSelect.value,
+      type:"PUT",
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(data.network),
+      success: function(results, status){
+            console.log('ts put',results);
+            data.timeseries = JSON.parse(results);
+            createTimeseries(data.timeseries);
+            recon1(recon1Select.value, data.timeseries)
+            recon2(recon2Select.value, data.timeseries)
+            recon3(recon3Select.value, data.timeseries)
+        }
+    });
+}
+
+function recon1(reconOption, ts){
+
+    loading('#recon1');
+
+     $.ajax({
+      url:reconstructorURL + "/recon1?recon=" + reconOption  + "&avg=" + data.avgDegree,
+      type:"PUT",
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(ts),
+      success: function(results, status){
+            console.log('recon1 put',results);
+            data.recon1 = results;
+            createAdjacencyMatrix(results, '#recon1')
+            scale(distanceSelect.value);
+        }
+    });
+}
+
+function recon2(reconOption, ts){
+
+    loading('#recon2');
+
+     $.ajax({
+      url:reconstructorURL + "/recon2?recon=" + reconOption  + "&avg=" + data.avgDegree,
+      type:"PUT",
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(ts),
+      success: function(results, status){
+            console.log('recon1 put',results);
+            data.recon2 = results;
+            createAdjacencyMatrix(results, '#recon2')
+            scale(distanceSelect.value);
+        }
+    });
+}
+
+function recon3(reconOption, ts){
+
+    loading('#recon3');
+
+     $.ajax({
+      url:reconstructorURL + "/recon3?recon=" + reconOption  + "&avg=" + data.avgDegree,
+      type:"PUT",
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(ts),
+      success: function(results, status){
+            console.log('recon1 put',results);
+            data.recon3 = results;
+            createAdjacencyMatrix(results, '#recon3')
+            scale(distanceSelect.value);
+        }
+    });
+}
+
+function distance(dist){
+    var pack = {g0: data.network, g1: data.recon1,g2: data.recon2,g3: data.recon3}
+
+    $.ajax({
+      url:distanceURL + "?dist=" + dist + '&g1=' +  recon1Select.value +'&g2=' +  recon2Select.value + '&g3=' +  recon3Select.value,
+      type:"put",
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(pack),
+      success: function(results, status){
+            console.log('distance',results);
+            createHeatmap(JSON.parse(results), data.max)
+      }
+        });
+}
+
+function scale(dist){
+
+    loading("#heatmap")
+
+    var pack = {G: data.network, ts: data.timeseries}
+
+    $.ajax({
+      url:scaleURL + "?dist=" + dist,
+      type:"put",
+      dataType: 'json',
+      contentType: 'application/json',
+      data: JSON.stringify(pack),
+      success: function(results, status){
+            console.log('scale',results);
+            data.max = results;
+            distance(dist);
+            console.log('max', data.max)
+      }
+        });
+
+
+}
+
+
+function loading(id){
+
+  windowHeight = $(window).height();
+  windowWidth = $(window).width();
+
+  h = windowHeight * 0.53 * 0.3;
+  w = windowWidth * 0.50 * 0.25;
+
+  if (w > h){
+    w = h;
+  }
+  else{
+    h = w;
+  }
+    var loaderLocal = loader.cloneNode(true);
+    loaderLocal.style.display = 'block'
+    loaderLocal.class = "center"
+
+
+
+    loaderLocal.width = w;
+    loaderLocal.height = h;
+
+    console.log('svg', loader);
+    d3.select(id).select("canvas").remove();
+    d3.select(id).selectAll("svg").remove();
+    d3.select(id).node().appendChild(loaderLocal);
+}
+
+function createTimeseries(data){
+
+  windowHeight = $(window).height();
+  windowWidth = $(window).width();
+
+  hi = windowHeight * 0.53 * 0.5;
+  wi = windowWidth * 0.50 * 0.8;
+
+    d3.select("#timeseries").select("canvas").remove();
+    d3.select("#timeseries").selectAll("svg").remove();
+
+    w = 2
+    h = 2
+
+    var dataList = []
+
+    for (i = 0; i <data.length; i++){
+        for (j = 0; j < timeseriesSlider.value; j++){
+            dataList.push(data[i][j]);
+        }
+    }
+
+    max = d3.max(dataList);
+    min = d3.min(dataList);
+
+    var myColor = d3.scaleLinear()
+      .range(["#FEFCFC", "#DA4145"])
+      .domain([min,max])
+
+    var canvas = d3.select("#timeseries").append("canvas")
+        .attr("width", wi)
+        .attr("height", hi)
+        .attr("class", "center");
+
+    var context = canvas.node().getContext("2d");
+
+
+     for (i = 0; i <data.length; i++){
+        for (j = 0; j < timeseriesSlider.value; j++){
+            color = myColor(data[i][j])
+            context.fillStyle = color;
+            context.fillRect(j, (i + (i * h)), w, h);
+        }
+    }
+
+
+
+}
+
+
+function createHeatmap(data,max){
+
+  windowHeight = $(window).height();
+  windowWidth = $(window).width();
+
+  console.log('height', $(window).height());
+
+  h = windowHeight * 0.53 * 0.5;
+  w = windowWidth * 0.50 * 0.6;
+
+
+  function round(value, decimals) {
+    return Number(Math.round(value+'e'+decimals)+'e-'+decimals);
+  }   
+
+    d3.select("#heatmap").selectAll("svg").remove()
+    d3.select("#tt").remove()
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 0, right: 30, bottom: 30, left: 150},
+      width = w,
+      height = h;
+
+    // append the svg object to the body of the page
+    var svg = d3.select("#heatmap")
+    .append("svg")
+      .attr("class", "center")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+    // Labels of row and columns
+    var myGroups = ["Ground Truth", recon1Select.value, recon2Select.value, recon3Select.value]//, "E", "F", "G", "H", "I", "J"]
+    var myVars = ["Ground Truth", recon1Select.value, recon2Select.value, recon3Select.value]//, "v5", "v6", "v7", "v8", "v9", "v10"]
+
+    // Build X scales and axis:
+    var x = d3.scaleBand()
+      .range([ 0, width ])
+      .domain(myGroups)
+      .padding(0.01);
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+
+    // Build X scales and axis:
+    var y = d3.scaleBand()
+      .range([ height, 0 ])
+      .domain(myVars)
+      .padding(0.01);
+    svg.append("g")
+      .call(d3.axisLeft(y));
+
+    vals = []
+
+    for (i=0; i < data.length; i++){
+        vals.push(data[i].value)
+    }
+  
+
+
+    console.log('max', max)
+
+    if (isNaN(max)){
+      var max = d3.max(vals);
+    }
+    else if (distanceSelect.value == "Net LSD" || distanceSelect.value == "Degree Divergence"){
+      var max = 1;
+    }
+
+    var min = 0; //d3.min(vals);
+
+    console.log("vals", max)
+
+
+    // Build color scale
+    var myColor = d3.scaleLinear()
+      .range(["#FEFCFC", "#DA4145"])
+      .domain([min,max])
+
+
+    var div = d3.select("body").append("div")
+        .attr("id", "tt")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+     svg.selectAll()
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("x", function(d) { return x(d.group) })
+      .attr("y", function(d) { return y(d.variable) })
+      .attr("width", x.bandwidth() )
+      .attr("height", y.bandwidth() )
+      .style("fill", function(d) { return myColor(d.value)} )
+      .on("mouseover", function(d) {
+            div.transition()
+                .duration(200)
+                .style("opacity", .9);
+            div	.html(round(d.value,2))
+                .style("left", (d3.event.pageX) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+            })
+        .on("mouseout", function(d) {
+            div.style("opacity", 0);
+        });
+
+    //d3.select(#colorbar)
+
+}
+
+
+function createAdjacencyMatrix(data,div) {
+  d3.select(div).selectAll('svg').remove()
+
+  const adjacencyMatrix = d3.adjacencyMatrixLayout();
+  //console.log('adjacencyMatrix', adjacencyMatrix);
+ // console.log('d3', d3);
+
+  windowHeight = $(window).height();
+  windowWidth = $(window).width();
+
+
+  h = windowHeight * 0.53 * 0.55;
+  
+  if (div == "#ground-network"){
+    w = windowWidth * 0.50 * 0.80;
+    h = windowHeight * 0.53 * 0.50;
+  }
+  
+  else{
+    w = windowWidth * 0.50 * 0.25;
+  }
+
+  if (w > h){
+    w = h;
+  }
+  else{
+    h = w;
+  }
+
+  adjacencyMatrix
+    .size([h ,w])
+    .nodes(data.nodes)
+    .links(data.links)
+    .directed(data.directed)
+    .nodeID(d => d.id);
+
+  const matrixData = adjacencyMatrix();
+
+  //console.log(matrixData)
+
+  const someColors = d3.scaleOrdinal()
+    .range(d3.schemeCategory20b);
+
+  d3.select(div)
+    .append('svg')
+      //.attr('transform', 'translate(250,0)')
+      .attr('width', w + 'px')
+      .attr('height', h + 'px')
+      .attr('class', 'center')
+      //.style('position','relative')
+      //.style('top', '-250px')
+      //.style('margin-bottom', '-350px')
+      .attr('id', 'adjacencyG')
+      .selectAll('rect')
+      .data(matrixData)
+      .enter()
+      .append('rect')
+        .attr('width', d => d.width)
+        .attr('height', d => d.height)
+        .attr('x', d => d.x)
+        .attr('y', d => d.y)
+        .style('stroke', 'black')
+        .style('stroke-width', '1px')
+        .style('stroke-opacity', .1)
+        .style('fill', '#DA4145')
+        .style('fill-opacity', d => d.weight * 1);
+
+
+
+  //d3.select('#adjacencyG')
+//    .call(adjacencyMatrix.xAxis);
+
+  //d3.select('#adjacencyG')
+    //.call(adjacencyMatrix.yAxis);
+}
+
+
+</script>
+
+</html>

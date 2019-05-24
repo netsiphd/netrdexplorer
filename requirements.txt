@@ -1,0 +1,15 @@
+networkx>=2.2.0
+numpy>=1.10.0
+scipy>=1.0.0
+scikit-learn>=0.18.2
+Cython==0.29.2
+POT==0.5.1
+gunicorn>=19.9.0
+Flask>=1.0.2
+Flask-RESTful>=0.3.7
+pandas>=0.24.2
+eventlet>= 0.9.7
+netrd>=0.1.0
+#-e .
+# There is a POT dependency that we handle separately
+# POT
